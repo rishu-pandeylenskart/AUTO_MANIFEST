@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Courier Manifest Generator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+  :root{
+    --saffron:#FF9933;
+    --saffron-dark:#CC7A29;
+    --green:#138808;
+    --green-dark:#0E6606;
+    --navy:#000080;
+    --white:#FFFFFF;
+    --ink:#1c1c1a;
+    --ink-soft:#5c5c56;
+    --line:#e2ddc9;
+    --paper:#fffdf7;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;}
+  .flag-strip{height:6px;display:flex;}
+  .flag-strip span{flex:1;}
+  .flag-strip .s1{background:var(--saffron);}
+  .flag-strip .s2{background:var(--white);border-top:1px solid var(--line);border-bottom:1px solid var(--line);}
+  .flag-strip .s3{background:var(--green);}
+  .wrap{max-width:980px;margin:0 auto;padding:24px 20px 40px;}
+  header{text-align:center;margin-bottom:22px;}
+  header h1{font-size:22px;margin:0 0 4px;color:var(--navy);font-weight:700;}
+  header p{margin:0;font-size:13px;color:var(--ink-soft);}
+
+  .card{
+    background:var(--white);border:1px solid var(--line);border-radius:10px;
+    padding:18px 20px;margin-bottom:18px;
+  }
+  .row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px;}
+  .field{flex:1;min-width:150px;}
+  .field label{display:block;font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:5px;}
+  .field input, .field select, .field textarea{
+    width:100%;border:1px solid var(--line);border-radius:7px;padding:8px 10px;
+    font-size:13px;font-family:inherit;background:var(--paper);
+  }
+  .field textarea{height:190px;resize:vertical;font-family:ui-monospace,monospace;font-size:12px;}
+
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+  button{
+    border:none;padding:10px 18px;border-radius:8px;font-size:14px;font-weight:600;
+    cursor:pointer;color:#fff;
+  }
+  button.generate{background:var(--saffron);}
+  button.generate:hover{background:var(--saffron-dark);}
+  button.pdf{background:var(--green);}
+  button.pdf:hover{background:var(--green-dark);}
+  button:disabled{opacity:0.5;cursor:not-allowed;}
+  .count-pill{
+    margin-left:auto;font-size:12px;color:var(--navy);background:#eef0ff;
+    border:1px solid #ccd0f5;padding:6px 12px;border-radius:20px;font-weight:600;
+  }
+  .status{font-size:13px;margin-top:10px;min-height:18px;font-weight:500;}
+  .status.ok{color:var(--green-dark);}
+  .status.err{color:#a32d2d;}
+
+  #preview{background:var(--white);border:1px solid var(--line);border-radius:10px;padding:20px;}
+  .label-box{
+    display:flex;align-items:center;gap:22px;border:2px solid var(--navy);border-radius:8px;
+    padding:12px 18px;margin-bottom:18px;width:fit-content;
+  }
+  .label-box .courier{font-size:24px;font-weight:700;color:var(--saffron-dark);background:#fff3e0;padding:8px 18px;border-radius:5px;}
+  .label-box .round{font-size:20px;font-weight:700;color:var(--green-dark);background:#eaf6e6;padding:8px 18px;border-radius:5px;}
+  .label-box .round-tag{font-size:11px;color:var(--ink-soft);display:block;margin-bottom:2px;text-transform:uppercase;}
+
+  .blocks-wrap{display:flex;flex-wrap:wrap;gap:14px;}
+  table.block{border-collapse:collapse;}
+  table.block th{
+    background:var(--navy);color:#fff;font-size:12px;font-weight:700;
+    border:1px solid var(--navy);padding:5px 10px;text-align:center;
+  }
+  table.block td{border:1px solid var(--line);padding:4px 10px;font-size:12.5px;text-align:center;white-space:nowrap;}
+  table.block td.sn{font-weight:600;color:var(--green-dark);width:34px;}
+  .empty-state{text-align:center;padding:40px 20px;color:var(--ink-soft);font-size:14px;}
+</style>
+</head>
+<body>
+<div class="flag-strip"><span class="s1"></span><span class="s2"></span><span class="s3"></span></div>
+
+<div class="wrap">
+  <header>
+    <h1>Courier Manifest Generator</h1>
+    <p>Paste AWB numbers, generate the manifest, download as PDF</p>
+  </header>
+
+  <div class="card">
+    <div class="row">
+      <div class="field">
+        <label>Courier Name</label>
+        <select id="courierName">
+          <option>BLITZ</option>
+          <option>BLITZNDD</option>
+          <option>BLUEDART</option>
+          <option>BUSYBEESPDS</option>
+          <option>BUSYBEESPPD</option>
+          <option>BusybeesSDD</option>
+          <option>DELCARTB2B</option>
+          <option selected>DELHIVERY</option>
+          <option>DELHIVERYPDS</option>
+          <option>DOT</option>
+          <option>DTDCVB2B</option>
+          <option>FASTBEETLE</option>
+          <option>GPSUPPLY</option>
+          <option>PURPLEDRONE</option>
+          <option>PURPLEDRONEB2C</option>
+          <option>SHADOWFAX</option>
+          <option>shreerajxpress</option>
+          <option>VelocityExpress</option>
+          <option>XPRESSBEES</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Round No.</label>
+        <input type="text" id="roundNo" placeholder="1">
+      </div>
+      <div class="field">
+        <label>Rows per block</label>
+        <input type="number" id="rowsPerBlock" value="40" min="5" max="100">
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:14px;">
+      <label>AWB numbers (one per line)</label>
+      <textarea id="awbInput" placeholder="34466915450701&#10;34466915450756&#10;34466915450550&#10;..."></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="generate" id="generateBtn">Generate Manifest</button>
+      <button class="pdf" id="pdfBtn" disabled>Download PDF</button>
+      <span class="count-pill" id="countPill">0 AWB</span>
+    </div>
+    <div class="status" id="statusMsg"></div>
+  </div>
+
+  <div id="preview">
+    <div id="labelBox"></div>
+    <div id="blocksWrap" class="blocks-wrap"></div>
+    <div class="empty-state" id="emptyState">Generate a manifest to see the preview here.</div>
+  </div>
+</div>
+
+<script>
+let current = null;
+
+function parseAwb(text){
+  return (text || '').split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
+}
+
+function escapeHtml(s){
+  return (s || '').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function buildBlocks(awbs, rowsPerBlock){
+  const blocks = [];
+  for(let i = 0; i < awbs.length; i += rowsPerBlock){
+    blocks.push(awbs.slice(i, i + rowsPerBlock));
+  }
+  return blocks;
+}
+
+function setStatus(msg, type){
+  const el = document.getElementById('statusMsg');
+  el.textContent = msg;
+  el.className = 'status' + (type ? ' ' + type : '');
+}
+
+function renderPreview(){
+  if(!current){
+    document.getElementById('labelBox').innerHTML = '';
+    document.getElementById('blocksWrap').innerHTML = '';
+    document.getElementById('emptyState').style.display = 'block';
+    return;
+  }
+  const { courier, roundNo, awbs, blocks, rowsPerBlock } = current;
+  document.getElementById('emptyState').style.display = 'none';
+
+  document.getElementById('labelBox').innerHTML = `
+    <div class="label-box">
+      <div class="courier">${escapeHtml(courier)}</div>
+      <div>
+        <span class="round-tag">Round No.</span>
+        <div class="round">${escapeHtml(roundNo)}</div>
+      </div>
+    </div>`;
+
+  const blocksWrap = document.getElementById('blocksWrap');
+  blocksWrap.innerHTML = '';
+  blocks.forEach((block, bIdx) => {
+    const startSn = bIdx * rowsPerBlock + 1;
+    const table = document.createElement('table');
+    table.className = 'block';
+    let html = `<thead><tr><th>S NO</th><th>AWB</th></tr></thead><tbody>`;
+    block.forEach((awb, i) => {
+      html += `<tr><td class="sn">${startSn + i}</td><td>${escapeHtml(awb)}</td></tr>`;
+    });
+    html += `</tbody>`;
+    table.innerHTML = html;
+    blocksWrap.appendChild(table);
+  });
+}
+
+document.getElementById('generateBtn').addEventListener('click', () => {
+  const courier = document.getElementById('courierName').value;
+  const roundNo = document.getElementById('roundNo').value.trim() || '1';
+  const rowsPerBlock = Number(document.getElementById('rowsPerBlock').value) || 40;
+  const awbInputEl = document.getElementById('awbInput');
+  const awbs = parseAwb(awbInputEl.value);
+
+  if(!awbs.length){
+    setStatus('Please paste at least one AWB number.', 'err');
+    document.getElementById('pdfBtn').disabled = true;
+    return;
+  }
+
+  const blocks = buildBlocks(awbs, rowsPerBlock);
+  current = { courier, roundNo, awbs, blocks, rowsPerBlock };
+  renderPreview();
+
+  document.getElementById('countPill').textContent = awbs.length + ' AWB';
+  document.getElementById('pdfBtn').disabled = false;
+  setStatus('Manifest generated for round ' + roundNo + '. Input box cleared for the next manifest.', 'ok');
+
+  awbInputEl.value = '';
+  const roundInput = document.getElementById('roundNo');
+  const nextRound = parseInt(roundNo, 10);
+  if(!isNaN(nextRound)){
+    roundInput.value = String(nextRound + 1);
+  }
+  awbInputEl.focus();
+});
+
+document.getElementById('pdfBtn').addEventListener('click', () => {
+  if(!current) return;
+  const { courier, roundNo, awbs, blocks, rowsPerBlock } = current;
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+  const pageW = doc.internal.pageSize.getWidth();
+  const marginL = 10, marginR = 10;
+  const usableW = pageW - marginL - marginR;
+  const snoW = 9, awbW = 26;
+  const blockW = snoW + awbW;
+  const blocksPerPage = Math.max(1, Math.floor(usableW / blockW));
+
+  const pageGroups = [];
+  for(let i = 0; i < blocks.length; i += blocksPerPage){
+    pageGroups.push(blocks.slice(i, i + blocksPerPage));
+  }
+
+  pageGroups.forEach((group, pageIdx) => {
+    if(pageIdx > 0) doc.addPage();
+
+    doc.setFontSize(16);
+    doc.setFont(undefined, 'bold');
+    doc.text(String(courier), 14, 16);
+    doc.setFontSize(11);
+    doc.setFont(undefined, 'normal');
+    doc.text('Round No: ' + roundNo, 14, 23);
+    doc.setFontSize(9);
+    doc.text('Total AWB: ' + awbs.length + '   |   Page ' + (pageIdx + 1) + ' of ' + pageGroups.length, 14, 28);
+
+    const groupStartBlockIdx = pageIdx * blocksPerPage;
+    const maxLen = Math.max(...group.map(b => b.length));
+    const head = [];
+    group.forEach(() => head.push('S NO', 'AWB'));
+    const body = [];
+    for(let r = 0; r < maxLen; r++){
+      const row = [];
+      group.forEach((block, gIdx) => {
+        const bIdx = groupStartBlockIdx + gIdx;
+        if(r < block.length){ row.push(String(bIdx * rowsPerBlock + r + 1), block[r]); }
+        else { row.push('', ''); }
+      });
+      body.push(row);
+    }
+
+    const columnStyles = {};
+    head.forEach((label, idx) => {
+      columnStyles[idx] = label === 'S NO'
+        ? { cellWidth: snoW, halign: 'center' }
+        : { cellWidth: awbW, halign: 'center' };
+    });
+
+    doc.autoTable({
+      head: [head],
+      body: body,
+      startY: 33,
+      theme: 'grid',
+      styles: { fontSize: 8, cellPadding: 1.5, halign: 'center', overflow: 'visible', minCellHeight: 5 },
+      headStyles: { fillColor: [0, 0, 128], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
+      columnStyles: columnStyles,
+      tableWidth: 'wrap',
+      margin: { left: marginL, right: marginR }
+    });
+  });
+
+  const fname = ('Manifest_' + courier + '_Round_' + roundNo).replace(/[^a-z0-9-_]/gi, '_') + '.pdf';
+  doc.save(fname);
+  setStatus('PDF downloaded: ' + fname, 'ok');
+});
+</script>
+</body>
+</html>
